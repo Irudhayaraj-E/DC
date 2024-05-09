@@ -1,0 +1,12 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+  - name: Mysql Version
+    ansible.builtin.command:
+      cmd:  ip route
+    register: mysqlOutput
+
+  - name: print the output of mysql
+    ansible.builtin.debug:
+      msg: "{{ mysqlOutput.stdout }}"

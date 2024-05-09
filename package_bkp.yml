@@ -1,0 +1,30 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+    - name: system update
+      ansible.builtin.command:
+        cmd: apt-get update -y
+      register: updateLog
+      ignore_errors: true
+
+    - name: upgrade packages
+      ansible.builtin.command:
+        cmd: apt-get upgrade -y
+      register: upgradeLog
+      ignore_errors: true
+
+    - name: dist-upgrade packages
+      ansible.builtin.command:
+        cmd: apt-get dist-upgrade -y
+      register: distUpgradeLog
+      ignore_errors: true
+
+    - name: dump it to the file
+      ansible.builtin.lineinfile:
+        path: "/tmp/EmpsystemLog/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}_package.log"
+        line: "\n\n ----------------------- {{ lookup('pipe', 'date +%Y%m%d') }} ----------------------- \n\nCACHE UPDATE: \n\n{{ updateLog.stdout_lines | join('\n') }}\n\nPACKAGE UPGRADE: \n\n {{ upgradeLog.stdout_lines | join('\n') }}\n\n DIST UPGRADE: \n\n {{ distUpgradeLog.stdout_lines | join('\n') }} "
+        create: yes
+      #with_items: "{{ ansible_play_batch }}"
+     # run_once: true  
+      delegate_to: localhost

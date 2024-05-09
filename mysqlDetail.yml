@@ -1,0 +1,19 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+  - name: Mysql Version
+    ansible.builtin.command:
+      cmd: mysql --version
+    register: mysqlOutput
+
+
+          
+  - name: rpm Version
+    ansible.builtin.command:
+      cmd: rpm --version
+    register: rpmOutput
+    
+  - name: print the output of mysql
+    ansible.builtin.debug:    
+      msg: "{{ rpmOutput.stdout }}" 

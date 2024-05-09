@@ -1,0 +1,16 @@
+---
+- name: Schedule system restart
+  hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: Add cron job for system restart
+      cron:
+        name: "restart_system"
+        minute: "10"
+        hour: "6"
+        day: "12"
+        month: "4"
+        job: "/usr/sbin/shutdown -r now"
+
+
+#/usr/sbin/shutdown -r now

@@ -1,0 +1,16 @@
+---
+ - hosts: "{{ target_host }}"
+   become: true
+   tasks:
+     - name: Execute dmidecode command
+       ansible.builtin.shell: sudo lshw -short -class memory | grep -E '8GiB DIMM DDR*'
+       register: dmi_output
+
+     - name: Extract size and type
+       ansible.builtin.set_fact:
+         ram_info: "{{ dmi_output.stdout_lines }}"
+
+     - name: Print size and type
+       ansible.builtin.debug:
+         msg: "UserName: {{ ansible_hostname | truncate(10, True, '')  }} RAM Size and Type: {{ ram_info | join(', ') }}"
+#sudo lshw -short -class memory | grep -E '8GiB DIMM DDR* | 4GiB DIMM DDR'

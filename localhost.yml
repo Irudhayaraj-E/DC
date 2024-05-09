@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+  become: true
+  tasks:
+    - name:
+      ansible.builtin.command:
+        cmd: df -h

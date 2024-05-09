@@ -1,0 +1,55 @@
+---
+ - hosts: "{{ target_host }}"
+   become: yes
+   vars:
+     csv_path: /tmp
+     csv_filename: report.csv
+     headers: Username, Database
+
+   tasks:
+    - name: Find the datadir
+      ansible.builtin.shell:
+        cmd: cat /etc/mysql/mysql.conf.d/mysqld.cnf | grep datadir | awk -F= '{print $2}' | tr -d ' ' | tr -d '\n'
+      register: mysql_datadir
+
+    - name: show mysql datadir
+      ansible.builtin.debug:
+        msg: "{{ mysql_datadir.stdout }}"
+
+    - name: store the database directories
+      ansible.builtin.command:
+        cmd: find "{{ mysql_datadir.stdout }}"  -maxdepth 1 -type d
+      register: database
+
+    - name: grab the database name
+      ansible.builtin.command:
+        cmd: basename "{{ item }}"
+      register: database_names
+      with_items: "{{ database.stdout_lines }}"
+
+    - name: Exclude the default
+      ansible.builtin.set_fact:
+        DB: "{{ database_names.results | map(attribute='stdout') | reject('match', '^(performance_schema|sys|mysql)$') | list }}"
+
+    - name: Print the database name
+      ansible.builtin.debug:
+        msg: "{{ DB }}"
+
+    - name: Save CSV headers and build out CSV file
+      ansible.builtin.lineinfile:
+        dest: "{{ csv_path }}/{{ csv_filename }}"
+        line: "{{ item }}"
+        create: true
+        state: present
+      loop:
+        - "{{ headers }}"
+        - "{{ inventory_hostname }},{{ DB | join('  ') }}"
+      loop_control:
+        label: "{{ item }}" 
+      delegate_to: localhost      
+     
+      
+#sudo find / -type f -name "*.sql.gz"
+#sudo find / -type f -name "*.sql"      
+      
+#https://stackoverflow.com/questions/73685557/ansible-playbook-to-export-systemd-status-into-csv-format      

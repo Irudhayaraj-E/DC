@@ -1,0 +1,40 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: Get MySQL Data Directory Path
+      ansible.builtin.shell:
+        cmd: cat /etc/mysql/mysql.conf.d/*.cnf | grep datadir | awk -F= '{print $2}' | tr -d ' ' | tr -d '\n'
+      register: mysql_datadir
+
+    - name: show mysql data dir path
+      ansible.builtin.debug:
+        msg: "{{ mysql_datadir.stdout }}"
+
+
+    - name: list the database
+      ansible.builtin.command:
+        cmd: find "{{ mysql_datadir.stdout }}"  -maxdepth 1 -type d
+      register: database
+
+    - name: split
+      ansible.builtin.command:
+        cmd: basename "{{ item }}"
+      register: database_name
+      with_items: "{{ database.stdout_lines }}"
+
+    - name: print the output of mysql
+      ansible.builtin.debug:
+        msg: "{{ database_name }}"
+
+#    - name: Add a line to a file.
+#      lineinfile:
+#        path: "/tmp/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d') }}_mysql_database.log"
+#        line: "\n\n***********************   {{ lookup('pipe', 'date +%d/%m/%Y_%H:%M:%S') }}   ***********************\n\nDATABASE LIST:\n\n{{ database_name }}\n\n"
+#        create: yes
+#      delegate_to: localhost
+
+
+
+#find "{{ mysql_datadir.stdout }}"  -maxdepth 1 -type d
+

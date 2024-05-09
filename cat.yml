@@ -1,0 +1,26 @@
+- hosts: localhost
+  connection: local
+  become: true
+  gather_facts: false
+  tasks:
+    - name: cat command
+      ansible.builtin.command: cat "{{ item }}"
+      register: out
+      with_items:
+        - /etc/shadow
+        - /etc/login.defs
+        - /etc/pam.d/common-auth
+        - /etc/hosts.equiv
+      ignore_errors: yes 
+    - name: Result
+      ansible.builtin.debug:
+        msg: 
+          1.Command: "{{ item.cmd }}"
+          2.StartTime: "{{ item.start }}"
+          3.EndTime: "{{ item.end }}"
+          4.Output: "{{ item.stdout }}"
+      loop: "{{ out | json_query('results[*]') | flatten }}"
+      when: item.changed
+      loop_control:
+        label: '{{item.cmd}}'
+

@@ -1,0 +1,18 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: "Ensure /etc/sudoers contains '%sudo ALL=(ALL:ALL) ALL'"
+      ansible.builtin.command:
+        cmd: grep "%sudo    ALL=(ALL:ALL) ALL" /etc/sudoers
+      register: result
+
+    - name: Status
+      ansible.builtin.debug:
+        msg: "Yes"
+      when: result.rc == 0
+
+    - name: Status2
+      ansible.builtin.debug:
+        msg: "No"
+      when: result.rc != 0

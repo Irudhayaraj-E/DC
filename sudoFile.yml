@@ -1,0 +1,24 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: "Finding string"
+      ansible.builtin.shell:
+        cmd: "grep -x '^#%sudo ALL=(ALL:ALL) ALL' /tmp/testing"
+      ignore_errors: true
+      register: result
+
+    - name: Status of yes
+      ansible.builtin.debug:
+        msg: "{{ result.stdout_lines }}"
+
+
+#    - name: Status of yes
+#      ansible.builtin.debug:
+#        msg: "Yes - Line is commented"
+#      when: result.rc == 0
+
+#    - name: Status of No
+#      ansible.builtin.debug:
+#        msg: "No the line is Not commented"
+#      when: result.rc != 0

@@ -1,0 +1,19 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+    - name: Read sudoers file
+      slurp:
+        path: /etc/sudoers
+      register: sudoers_file
+
+    - name: Convert sudoers file to string
+      set_fact:
+        sudoers_content: "{{ sudoers_file.content | b64decode | string }}"
+
+    - name: Check if the line exists in sudoers file
+      set_fact:
+        line_exists: "{{ 'yes' if '%sudo ALL=(ALL:ALL) ALL' in sudoers_content else 'no' }}"
+
+    - debug:
+        msg: "The line is {{ line_exists }}"

@@ -1,0 +1,21 @@
+---
+ - hosts: "{{ target_host }}"
+   become: True
+   tasks:
+     - name: Create defaultInstall.txt file if not exists
+       ansible.builtin.command:
+         cmd: touch /tmp/defaultInstall.txt
+       check_mode: no
+
+     - name: use shell command
+       ansible.builtin.shell: "zcat /var/log/installer/initial-status.gz | grep 'Package:' | awk -F': ' '{print $2}' > /tmp/exclude.txt"
+       ansible.builtin.shell: " dpkg-query -Wf '${binary:Package}|${binary:Summary}\n' | grep -v 'linux-modules\\|linux-image\\|lib' |  grep -v -f /tmp/defaultInstall.txt"
+       register: outPutLog
+
+
+     - name: Generate log information
+       ansible.builtin.lineinfile:
+         path: "/tmp/EmployeSFDeatils/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d') }}_SoftwareDetais.log"
+         line: "\n\n-----------------{{ lookup('pipe', 'date +%d/%m/%Y_%H:%M:%S') }}-----------------\n\nPACKAGE DETAILS:\n\n{{ outPutLog.stdout }}"
+         create: yes
+       delegate_to: localhost

@@ -1,0 +1,20 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: sudoers file check
+      shell: cat /etc/sudoers
+      register: sudoers_file_content
+      changed_when: false
+
+    - name: output
+      debug:
+        msg: "{{ sudoers_file_content }}"
+
+    - name: provide yes/no
+      set_fact:
+        sudoers_contains_line: "{{ 'yes' if sudoers_file_content.stdout_lines | regex_search('%sudo ALL=(ALL:ALL) ALL') else 'no' }}"
+
+    - name: status
+      debug:
+        msg: "Does Sudoers file have sudo ALL=(ALL:ALL) ALL : {{ sudoers_contains_line }}"

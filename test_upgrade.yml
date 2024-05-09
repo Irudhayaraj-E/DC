@@ -1,0 +1,40 @@
+---
+ - hosts: all
+   become: true
+   tasks:
+     - name: pakge update
+       apt: update_cache=yes
+       register: update_result
+
+     - name: Debug the update output
+       debug:
+         var: update_result.stdout_lines
+
+     - name: pkge upgrade
+       apt: upgrade=yes
+       register: update_result
+
+     - name: Debug package upgrade
+       debug:
+         var: upgrade_result.stdout_lines
+
+     - name: with-dist
+       apt: upgrade=dist
+       register: dist_update_result
+
+     - name: Debug package dist-upgrade
+       debug:
+         var: dist_update_result.stdout_lines
+
+     - name: Saving data to local file
+       copy:
+         content:  "{{  update_result.stdout_lines|join('\n')  }}"
+#         content:  "{{  upgrade_result.stdout_lines|join('\n')  }}"
+#         content:  "{{  dist_update_result.stdout_lines|join('\n')  }}"
+
+         dest: /home/ubuntu/log.txt
+       delegate_to: ip-172-31-35-140
+
+     - name: Indication
+       debug:
+         msg: log has been stored

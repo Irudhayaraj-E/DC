@@ -1,0 +1,25 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: true
+  tasks:
+    - name: system_update
+      command: "apt-get update -y"
+      register: status_uptime
+
+    - name: system_upgrade
+      command: "apt-get upgrade -y"
+      register: upgrade_status
+
+    - name: display_update
+      debug:
+        var: status_uptime.stdout_lines
+
+    - name: display_upgrade
+      debug:
+        var: upgrade_status.stdout_lines
+
+    - name: write_to_file
+      lineinfile:
+        path: "/home/ubuntu/log.txt"
+        content: "{{ status_uptime.stdout_lines | join('\n') }}\n{{ upgrade_status.stdout_lines }}"

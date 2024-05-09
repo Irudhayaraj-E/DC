@@ -1,0 +1,25 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  vars:
+    SEARCH_STRING: '^%sudo\s*ALL=\(ALL:ALL\)\s*ALL$'
+    SEARCH_FILE: "/etc/sudoers"
+  tasks:
+    - name: Search for string
+      lineinfile:
+        path: "{{ SEARCH_FILE }}"
+        regexp: "{{ SEARCH_STRING }}"
+        state: absent
+      check_mode: true
+      changed_when: false
+      register: search_result
+
+    - name: If line is presnet
+      debug:
+        msg: "Yes line is not commented.{{ search_result }}"
+      when: search_result.found
+
+    - name: if commented
+      debug:
+        msg: "Line is commented"
+      when: not search_result.found

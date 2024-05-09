@@ -1,0 +1,15 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: Check sudo file
+      shell: |
+        if grep -x '^%sudo\s*ALL=\(ALL:ALL\)\s*ALL$' /tmp/testing; then
+          echo "Yes - line is not commented"
+        else
+          echo "No - Line is commented"
+        fi
+      register: grep_output
+
+    - debug:
+        msg: "{{ grep_output.stdout }} "

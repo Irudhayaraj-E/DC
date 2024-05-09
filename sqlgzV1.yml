@@ -1,0 +1,53 @@
+---
+ - hosts: "{{ target_host }}"
+   become: yes
+   vars:
+     csv_path: /tmp
+     csv_filename: mysqlreport.csv
+     headers: Username, mysqlgz
+
+   tasks:
+    - name: Find .sql.gz files
+      ansible.builtin.command:
+        cmd: sudo find / -type f -name "*.sql.gz"
+      register: sql_gz_files
+      ignore_errors: true
+
+    - name: grab the sql.gz name
+      ansible.builtin.command:
+        cmd: basename "{{ item }}"
+      register: sql_gz_names
+      with_items: "{{ sql_gz_files.stdout_lines }}"
+
+    - name: Exclude the default
+      ansible.builtin.set_fact:
+        sqlgz: "{{ sql_gz_names.results | map(attribute='stdout') | list }}"
+
+    - name: Print the database name
+      ansible.builtin.debug:
+        msg: "{{ sqlgz }}"
+
+    - name: Save CSV headers and build out CSV file
+      ansible.builtin.lineinfile:
+        dest: "{{ csv_path }}/{{ csv_filename }}"
+        line: "{{ item }}"
+        create: true
+        state: present
+      loop: "{{ [headers] + [inventory_hostname + ',' + sqlgz | join(' ')] | unique }}"
+      loop_control:
+        label: "{{ item }}"
+      delegate_to: localhost
+
+
+#    - name: Save CSV headers and build out CSV file
+#      ansible.builtin.lineinfile:
+#        dest: "{{ csv_path }}/{{ csv_filename }}"
+#        line: "{{ item }}"
+#        create: true
+#        state: present
+#      loop:
+#        - "{{ headers }}"
+#        - "{{ inventory_hostname }},{{ sqlgz | join('  ') }}"
+#      loop_control:
+#        label: "{{ item }}"
+#      delegate_to: localhost

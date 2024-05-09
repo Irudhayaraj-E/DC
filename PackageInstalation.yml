@@ -1,0 +1,102 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+   - name: Set timezone to Asia/Kolkata
+     ansible.builtin.command:
+       cmd: timedatectl set-timezone Asia/Kolkata
+     register: TimezoneLog
+
+   - name: Package Installation
+     ansible.builtin.package:
+       name: "{{ item }}"
+       state: present
+     loop:
+       - git
+       - apache2
+       - memcached
+       - unzip
+       - gearman-job-server
+       - supervisor
+       - openjdk-8-jre-headless
+       - certbot
+     register: PackageLog
+
+   - name: Repositories Apache2/php
+     ansible.builtin.command:
+       cmd: "{{ item }}"
+     loop:
+       - sudo add-apt-repository ppa:ondrej/apache2
+       - sudo add-apt-repository ppa:ondrej/php
+     register: RepoLog
+
+   - name: Update package cache
+     ansible.builtin.command:
+       cmd: apt-get update -y
+     register: UpdateLog   
+
+   - name: packages Upgrade
+     ansible.builtin.command:
+       cmd: apt-get upgrade -y
+     register: UpgradeLog
+
+   - name: dist upgrade
+     ansible.builtin.command:
+       cmd: apt-get dist-upgrade -y
+     register: distLog
+
+   - name: Install PHP packages
+     ansible.builtin.package:
+       name: "{{ item }}"
+       state: present
+     loop:
+       - php7.0
+       - libapache2-mod-php7.0
+       - php7.0-mcrypt
+       - php7.0-dev
+       - php7.0-gd
+       - php7.0-bcmath
+       - php7.0-mbstring
+       - php7.0-zip
+       - php7.0-curl
+       - php7.0-soap
+       - php7.0-gmp
+       - php7.0-bz2
+       - php7.0-xml
+       - php7.0-memcache
+       - php7.0-memcached
+     register: PhpLog
+
+   - name: Install composer
+     ansible.builtin.uri:
+       url: "https://getcomposer.org/installer"
+       dest: /tmp/composer-setup.php
+     register: UrlLog
+
+   - name: Install composer part 2
+     ansible.builtin.command:
+       cmd: HASH=`curl -sS https://composer.github.io/installer.sig`
+       cmd: php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('/tmp/composer-setup.php'); } echo PHP_EOL;"
+       cmd: sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+
+   - name: Install Perl libraries
+     ansible.builtin.package:
+       name: "{{ item }}"
+       state: present
+     loop:
+       - librose-db-perl
+       - librose-db-object-perl
+     register: PerlLog  
+
+   - name: Install rsync
+     ansible.builtin.package:
+       name: rsync
+       state: present
+     register: rsyncLog
+
+   - name: Add a line to a file.
+     lineinfile:
+       path: "/tmp/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d') }}_package.log"
+       line: "\n\n***********************   {{ lookup('pipe', 'date +%d/%m/%Y_%H:%M:%S') }}   ***********************\n\nTimezoneLog:\n\n{{ TimezoneLog.msg }}\n\nPACKAGE INSTALATION:\n\n{{ PackageLog.msg }}\n\nREPOLOG:\n\n{{ RepoLog.msg }}\nUPDATE LOG:\n\n{{ UpdateLog.msg }}\n\ndistLog:\n\n{{ distLog.msg }} "
+       create: yes
+     delegate_to: localhost

@@ -1,0 +1,21 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+  - name: USB BLOCK
+    ansible.builtin.command:
+      cmd: sudo chattr -i /etc/modprobe.d/blacklist.conf
+      cmd: sudo cp -p /etc/modprobe.d/blacklist.conf .
+      cmd: sudo update-initramfs -u
+      cmd: sudo chattr +i /etc/modprobe.d/blacklist.conf
+      cmd: sudo modprobe - r usb_storage
+      cmd: sudo modprobe - r uas
+    ignore_errors: True
+
+  - name: Move usb-storage.ko to usb-storage.ko.blacklist
+    command: mv /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko.blacklist
+    args:
+      creates: /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko.blacklist
+
+  - name: Lock the usb-storage.ko.blacklist
+    command: chattr +i /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko.blacklist

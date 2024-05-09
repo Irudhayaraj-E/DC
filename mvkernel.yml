@@ -1,0 +1,12 @@
+---
+- name: Blacklist usb-storage module and set immutable attribute
+  hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: Move usb-storage.ko to usb-storage.ko.blacklist
+      command: mv /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko.blacklist
+      args:
+        creates: /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko.blacklist
+
+    - name: Set immutable attribute on usb-storage.ko.blacklist
+      command: chattr +i /lib/modules/{{ ansible_kernel }}/kernel/drivers/usb/storage/usb-storage.ko.blacklist

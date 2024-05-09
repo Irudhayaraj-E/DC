@@ -1,0 +1,74 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+    - name: taking copy of blacklist.conf
+      ansible.builtin.copy:
+        src: /etc/modprobe.d/blacklist.conf
+        dest: /tmp/blacklist.conf.bkp.txt
+
+
+    - name: update the file
+      ansible.builtin.lineinfile:
+        path: "/tmp/blacklist.conf"
+        line: "blacklist usb-storage"
+
+
+    - name: diff blacklist.conf blacklist.conf_bkp
+      ansible.builtin.command:
+        cmd: diff /etc/modprobe.d/blacklist.conf /tmp/blacklist.conf.bkp.txt
+      register: blacklistLog
+      ignore_errors: true
+
+    -  name:  update-initramfs -u
+       ansible.builtin.command:
+         cmd: update-initramfs -u
+       register: InitramLog
+
+
+#    -  name: lock the file
+#       ansible.builtin.command:
+#         cmd: chattr + i /tmp/blacklist.conf
+
+#    - name: lsmod | grep usb_storage
+#      ansible.builtin.command:
+#        cmd: lsmod | grep usb_storage
+#      register: UsbStorageLog
+
+
+ #   - name: modprobe - r usb_storage
+ #     ansible.builtin.command:
+ #       cmd: modprobe - r usb_storage
+ #     register: modprobeLoh
+
+
+#    - name: modprobe - r uas
+#      ansible.builtin.command:
+#        cmd: modprobe - r uas
+     # register: uasLog
+
+
+#    - name: lsmod | grep usb
+#      ansible.builtin.command:
+#        cmd: lsmod | grep usb
+      #register: usbLog
+
+
+    - name: ls /lib/modules/`uname -r`/kernel/drivers/usb/storage/ | grep usb
+      ansible.builtin.command:
+        cmd: "ls /lib/modules/`uname -r`/kernel/drivers/usb/storage/ | grep usb"
+      register: ListLog
+
+
+    - name: cd /lib/modules/`uname -r`/kernel/drivers/usb/storage/
+      ansible.builtin.command:
+        cmd: cd /lib/modules/`uname -r`/kernel/drivers/usb/storage/
+        cmd: mv usb-storage.ko usb-storage.ko.blacklist
+
+
+    - name: Generate log information
+      ansible.builtin.lineinfile:
+        path: "/tmp/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d') }}_OS.log"
+        line: "\n\n-----------------{{ lookup('pipe', 'date +%d/%m/%Y_%H:%M:%S') }}-----------------\n\ndiff blacklist.conf:\n\n{{ blacklistLog.stdout }}\n\n update-initramfs -u:\n\n {{ InitramLog.stdout }}\n\n lsmod | grep usb_storage:\n\nls /lib/modules/`uname -r`/kernel/drivers/usb/storage/ | grep usb:\n\n{{ ListLog.stdout }}"
+        create: yes
+      delegate_to: localhost

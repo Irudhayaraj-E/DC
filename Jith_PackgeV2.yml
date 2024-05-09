@@ -1,0 +1,37 @@
+---
+#- name: Package Update/Upgrade Task
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: "apt-get update"
+      ansible.builtin.apt:
+        update_cache: yes
+      ignore_errors: true
+      register: updateLog
+    - name: "apt-get upgrade"
+      ansible.builtin.apt:
+        upgrade: yes
+      register: upgradeLog
+    - name: "apt-get dist-update"
+      ansible.builtin.apt:
+        upgrade: dist
+      register: distUpgradeLog
+    - name: "apt autoclean"
+      ansible.builtin.apt:
+        autoclean: yes
+      register: cleanLog
+    - name: "apt autoremove"
+      ansible.builtin.apt:
+        autoremove: yes
+        purge: true
+      register: removeLog
+    - name: Add a line to a file.
+      lineinfile:
+        path: "/home/irudhayaraj/20240314/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d') }}_package.log"
+        line: "\n\n***********************   {{ lookup('pipe', 'date +%d/%m/%Y_%H:%M:%S') }}   ***********************\n\nCACHE UPDATE:\n\n{{ updateLog }}\n\nPACKAGE UPGRADE:\n\n{{ upgradeLog.msg }}\n\nDIST UPGRADE:\n\n{{ distUpgradeLog.msg }}\nCLEAN LOG:\n\n{{ cleanLog.stdout_lines }}\n\nAUTO REMOVE:\n\n{{ removeLog.stdout_lines }} "
+        create: yes
+      delegate_to: localhost
+      run_once: true
+      loop: "{{ ansible_play_hosts }}"
+      loop_control:
+        loop_var: host

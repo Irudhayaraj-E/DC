@@ -1,0 +1,20 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: Find string
+      ansible.builtin.lineinfile:
+        path: /tmp/testing
+        regexp: '^%sudo\s*ALL=\(ALL:ALL\)\s*ALL$'
+        state: absent
+      check_mode: yes
+      changed_when: false
+      register: out
+
+    - debug:
+        msg: "Yes, line exists. {{ out }}"
+      when: out.found
+
+    - debug:
+        msg: "Line does NOT exist."
+      when: not out.found

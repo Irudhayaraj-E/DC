@@ -1,0 +1,13 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  tasks:
+  - name: Mysql Version
+    ansible.builtin.command:
+      cmd: clamscan --version
+    register: clamAv
+
+  - name: print the output of clamAv
+    ansible.builtin.debug:
+      msg: "{{ clamAv.stdout }}"
+          

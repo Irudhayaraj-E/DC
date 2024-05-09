@@ -1,0 +1,40 @@
+---
+ - hosts: "{{ target_host }}"
+   become: yes
+   tasks:
+    - name: Find the datadir
+      ansible.builtin.shell:
+        cmd: cat /etc/mysql/mysql.conf.d/*.cnf | grep datadir | awk -F= '{print $2}' | tr -d ' ' | tr -d '\n'
+      register: mysql_datadir
+
+    - name: show mysql datadir
+      ansible.builtin.debug:
+        msg: "{{ mysql_datadir.stdout }}"
+
+    - name: store the database directories
+      ansible.builtin.command:
+        cmd: find "{{ mysql_datadir.stdout }}"  -maxdepth 1 -type d
+      register: database
+
+    - name: grab the database name
+      ansible.builtin.command:
+        cmd: basename "{{ item }}"
+      register: database_names
+      with_items: "{{ database.stdout_lines }}"
+
+    - name: Exclude the default
+      ansible.builtin.set_fact:
+        DB: "{{ database_names.results | map(attribute='stdout') | reject('match', '^(performance_schema|sys|mysql)$') | list }}"
+
+    - name: Create CSV content
+      set_fact:
+        csv_content: |
+          Database Names
+          {% for item in DB %}
+          {{ item }}
+          {% endfor %}
+
+    - name: Export database names to CSV file
+      ansible.builtin.copy:
+        content: "{{ csv_content }}"
+        dest: /tmp/database_names.csv

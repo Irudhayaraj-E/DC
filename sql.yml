@@ -1,0 +1,41 @@
+---
+ - hosts: "{{ target_host }}"
+   become: yes
+   vars:
+     csv_path: /tmp
+     csv_filename: mysql_report.csv
+     headers: Username, mysql
+
+   tasks:
+    - name: Find .sql files
+      ansible.builtin.command:
+        cmd: sudo find / -type f -name "*.sql"
+      register: sql_files
+      ignore_errors: true
+
+    - name: grab the sql.gz name
+      ansible.builtin.command:
+        cmd: basename "{{ item }}"
+      register: sql_names
+      with_items: "{{ sql_files.stdout_lines }}"
+
+    - name: Exclude the default
+      ansible.builtin.set_fact:
+        sql: "{{ sql_names.results | map(attribute='stdout') | list }}"
+
+    - name: Print the database name
+      ansible.builtin.debug:
+        msg: "{{ sql }}"
+
+    - name: Save CSV headers and build out CSV file
+      ansible.builtin.lineinfile:
+        dest: "{{ csv_path }}/{{ csv_filename }}"
+        line: "{{ item }}"
+        create: true
+        state: present
+      loop:
+        - "{{ headers }}"
+        - "{{ inventory_hostname }},{{ sql }}"
+      loop_control:
+        label: "{{ item }}"
+      delegate_to: localhost

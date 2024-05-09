@@ -1,0 +1,23 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: Gather facts
+      setup: 
+    - name: Get installed packages
+      ansible.builtin.package_facts:
+        manager: apt
+
+
+#    - name: Print the package facts
+#      debug:
+#        var: "{{ ansible_facts.packages.keys() | list }}"
+#      register: package
+
+    - name: Add a line to a file.
+      lineinfile:
+         path: "/tmp/{{ inventory_hostname }}_{{ lookup('pipe', 'date +%Y%m%d') }}_packagelist.log"
+         line:  "{{ item }}"
+         create: yes
+      delegate_to: localhost
+      loop: "{{ ansible_facts.packages.keys() | list }}"

@@ -1,0 +1,26 @@
+---
+ - hosts: "{{ target_host }}"
+   become: yes
+   tasks:
+    - name: Get MySQL Data Directories
+      ansible.builtin.shell:
+        cmd: sudo find /var/lib/mysql/ -maxdepth 1 -mindepth 1 -type d
+      register: mysql_data_directories
+
+    - name: Extract Database Names from MySQL Data Directories
+      ansible.builtin.command:
+        cmd: basename "{{ item }}"
+      register: database_names
+      with_items: "{{ mysql_data_directories.stdout_lines }}"
+
+#    - name: Show Database Names
+#      ansible.builtin.debug:
+#        msg: "{{ database_names.results | map(attribute='stdout') | list }}"
+
+    - name: Filter Out System Databases
+      ansible.builtin.set_fact:
+        filtered_database_names: "{{ database_names.results | map(attribute='stdout') | reject('match', '^(performance_schema|sys|mysql)$') | list }}"
+
+    - name: Show Database Names
+      ansible.builtin.debug:
+        msg: "{{ filtered_database_names }}"

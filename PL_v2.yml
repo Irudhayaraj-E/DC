@@ -1,0 +1,14 @@
+---
+- hosts: "{{ target_host }}"
+  become: yes
+  tasks:
+    - name: remove package
+      ansible.builtin.command:
+        cmd: sudo snap remove snap-store
+      ignore_errors: yes
+      ansible.builtin.command:
+        cmd: sudo apt remove gnome-software
+      ignore_errors: yes
+#    - name: debug
+#      debug:
+#        msg: "success"
